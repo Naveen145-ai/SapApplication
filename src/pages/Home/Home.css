@@ -1,0 +1,19 @@
+.input-box {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.input-box-file {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+}
+
+.sap-upload-container {
+  background-color: #f9f9f9;
+}

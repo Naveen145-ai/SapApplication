@@ -18,10 +18,42 @@ const Home = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData); // for now just show in console
-    alert("Form submitted! (console log)");
+
+    const data = new FormData();
+    data.append('eventName', formData.eventName);
+    data.append('eventDate', formData.eventDate);
+    data.append('category', formData.category);
+    data.append('points', formData.points);
+    data.append('proof', formData.file); // 👈 backend expects "proof" as file field
+
+    try {
+      const response = await fetch('http://localhost:8080/api/sap/submit', {
+        method: 'POST',
+        body: data,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('✅ Form submitted successfully!');
+        console.log(result);
+        setFormData({
+          eventName: '',
+          eventDate: '',
+          category: '',
+          points: '',
+          file: null,
+        });
+      } else {
+        alert('❌ Submission failed: ' + result.error);
+        console.error(result);
+      }
+    } catch (error) {
+      alert('⚠️ Error: ' + error.message);
+      console.error('Upload error:', error);
+    }
   };
 
   return (
