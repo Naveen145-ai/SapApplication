@@ -3,58 +3,58 @@ import './Home.css';
 
 const Home = () => {
   const [formData, setFormData] = useState({
-    eventName: '',
-    eventDate: '',
-    category: '',
-    points: '',
-    file: null,
+    name: '',
+    email: '',
+    activity: '',
+    file: null, // always store file here
   });
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    setFormData({
-      ...formData,
-      [name]: files ? files[0] : value,
-    });
+
+    // Make sure file always goes to 'file' in state
+    if (name === 'proof') {
+      setFormData({ ...formData, file: files[0] });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const data = new FormData();
-    data.append('eventName', formData.eventName);
-    data.append('eventDate', formData.eventDate);
-    data.append('category', formData.category);
-    data.append('points', formData.points);
-    data.append('proof', formData.file); // 👈 backend expects "proof" as file field
+  const data = new FormData();
+  data.append('name', formData.name);
+  data.append('email', formData.email);
+  data.append('activity', formData.activity);
+  data.append('proof', formData.file);
 
-    try {
-      const response = await fetch('http://localhost:8080/api/sap/submit', {
-        method: 'POST',
-        body: data,
+  try {
+    const response = await fetch('http://localhost:8080/api/sap/submit', {
+      method: 'POST',
+      body: data,
+    });
+
+    const result = await response.json();
+    console.log('Upload result:', result);
+
+    if (response.ok) {
+      alert('✅ SAP Form submitted successfully!');
+      // Optional: clear the form after success
+      setFormData({
+        name: '',
+        email: '',
+        activity: '',
+        file: null,
       });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert('✅ Form submitted successfully!');
-        console.log(result);
-        setFormData({
-          eventName: '',
-          eventDate: '',
-          category: '',
-          points: '',
-          file: null,
-        });
-      } else {
-        alert('❌ Submission failed: ' + result.error);
-        console.error(result);
-      }
-    } catch (error) {
-      alert('⚠️ Error: ' + error.message);
-      console.error('Upload error:', error);
+    } else {
+      alert(`❌ Submission failed: ${result.error}`);
     }
-  };
+  } catch (error) {
+    console.error('Upload error:', error);
+    alert('❌ Something went wrong while submitting the form.');
+  }
+};
 
   return (
     <div className="sap-upload-container p-6 max-w-xl mx-auto bg-white shadow-md rounded-lg mt-10">
@@ -62,11 +62,11 @@ const Home = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block font-semibold mb-1">Event Name</label>
+          <label className="block font-semibold mb-1">Name</label>
           <input
             type="text"
-            name="eventName"
-            value={formData.eventName}
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             className="input-box"
             required
@@ -74,11 +74,11 @@ const Home = () => {
         </div>
 
         <div>
-          <label className="block font-semibold mb-1">Event Date</label>
+          <label className="block font-semibold mb-1">Email</label>
           <input
-            type="date"
-            name="eventDate"
-            value={formData.eventDate}
+            type="email"
+            name="email"
+            value={formData.email}
             onChange={handleChange}
             className="input-box"
             required
@@ -86,28 +86,10 @@ const Home = () => {
         </div>
 
         <div>
-          <label className="block font-semibold mb-1">Category</label>
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className="input-box"
-            required
-          >
-            <option value="">Select category</option>
-            <option value="Technical">Technical</option>
-            <option value="Non-Technical">Non-Technical</option>
-            <option value="Sports">Sports</option>
-            <option value="Social">Social</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block font-semibold mb-1">Points Claimed</label>
-          <input
-            type="number"
-            name="points"
-            value={formData.points}
+          <label className="block font-semibold mb-1">Activity Description</label>
+          <textarea
+            name="activity"
+            value={formData.activity}
             onChange={handleChange}
             className="input-box"
             required
@@ -118,7 +100,7 @@ const Home = () => {
           <label className="block font-semibold mb-1">Upload Proof (PDF/Image)</label>
           <input
             type="file"
-            name="file"
+            name="proof"
             accept=".pdf,.jpg,.jpeg,.png"
             onChange={handleChange}
             className="input-box-file"
