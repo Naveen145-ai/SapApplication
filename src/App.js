@@ -9,7 +9,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path='/home' element={<Home/>}/>
+       <Route path='/home' element={<Home mentorEmail="naveenkarthi427@gmail.com" />} />
+
       <Route path='/login' element={<Login/>}/>
            <Route path='/' element={<SignUp/>}/>
       </Routes>

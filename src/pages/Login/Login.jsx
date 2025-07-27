@@ -22,10 +22,12 @@ const Login = () => {
 
       const data = await res.json();
 
-      if (res.ok) {
-       
-        navigate('/home');
-      } else {
+    if (res.ok) {
+  // Save mentor's email and role
+ 
+  navigate('/home');
+}
+ else {
         alert(data.message || 'Login failed');
       }
     } catch (error) {
