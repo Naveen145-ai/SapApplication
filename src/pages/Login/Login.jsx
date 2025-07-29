@@ -24,7 +24,7 @@ const Login = () => {
 
     if (res.ok) {
   // Save mentor's email and role
- 
+  localStorage.setItem('userEmail', email);
   navigate('/home');
 }
  else {
