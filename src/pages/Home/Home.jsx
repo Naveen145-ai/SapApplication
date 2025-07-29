@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
+
+import './Home.css'
 const Home = () => {
+
+<nav style={{ marginBottom: '20px' }}>
+  <Link to="/home" style={{ marginRight: '10px' }}>Home</Link>
+  <Link to="/notification">Notifications</Link>
+</nav>
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -48,12 +56,16 @@ const Home = () => {
   };
 
   return (
+
     <form onSubmit={handleSubmit}>
+
+      <h1>Sap Form</h1>
       <input name="name" onChange={handleChange} placeholder="Your Name" required />
       <input name="email" onChange={handleChange} placeholder="Your Email" required />
       <input name="mentorEmail" onChange={handleChange} placeholder="Mentor Email" required />
       <textarea name="activity" onChange={handleChange} placeholder="Activity Description" required />
       <input type="file" name="proof" onChange={handleChange} required />
+ 
       <button type="submit">Submit SAP</button>
     </form>
   );
