@@ -11,10 +11,38 @@ const Home = () => {
     file: null,
   });
 
+  const [selectedActivity, setSelectedActivity] = useState('');
+  const [customActivity, setCustomActivity] = useState('');
+
+  const activityOptions = [
+    'Hackathon',
+    'Workshop',
+    'Seminar',
+    'Internship',
+    'Online Course',
+    'Technical Talk',
+    'Paper Presentation',
+    'Project Showcase',
+    'Coding Contest',
+    'Tech Fest',
+    'Others',
+  ];
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'proof') {
       setFormData({ ...formData, file: files[0] });
+    } else if (name === 'activitySelect') {
+      setSelectedActivity(value);
+      if (value !== 'Others') {
+        setFormData({ ...formData, activity: value });
+        setCustomActivity('');
+      } else {
+        setFormData({ ...formData, activity: '' }); // Clear activity if Others is selected
+      }
+    } else if (name === 'customActivity') {
+      setCustomActivity(value);
+      setFormData({ ...formData, activity: value });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -40,6 +68,8 @@ const Home = () => {
       if (res.ok) {
         alert('✅ Submitted successfully!');
         setFormData({ name: '', email: '', activity: '', mentorEmail: '', file: null });
+        setSelectedActivity('');
+        setCustomActivity('');
       } else {
         alert('❌ ' + result.error);
       }
@@ -50,21 +80,40 @@ const Home = () => {
   };
 
   return (
-    <div>
-      {/* ✅ Move nav inside the return */}
-      <nav style={{ marginBottom: '20px' }}>
-        <Link to="/home" style={{ marginRight: '10px' }}>Home</Link>
-        <Link to="/notification">Notifications</Link>
+    <div className="home-container">
+      <nav className="nav-bar">
+        <Link to="/home">🏠 Home</Link>
+        <Link to="/notification">🔔 Notifications</Link>
       </nav>
 
-      <form onSubmit={handleSubmit}>
-        <h1>SAP Form</h1>
+      <form className="form-box" onSubmit={handleSubmit}>
+        <h2>SAP Submission Form</h2>
         <input name="name" value={formData.name} onChange={handleChange} placeholder="Your Name" required />
         <input name="email" value={formData.email} onChange={handleChange} placeholder="Your Email" required />
         <input name="mentorEmail" value={formData.mentorEmail} onChange={handleChange} placeholder="Mentor Email" required />
-        <textarea name="activity" value={formData.activity} onChange={handleChange} placeholder="Activity Description" required />
+
+        {/* Dropdown + Optional input */}
+        <label>Activity Type</label>
+        <select name="activitySelect" value={selectedActivity} onChange={handleChange} required>
+          <option value="">-- Select Activity --</option>
+          {activityOptions.map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+
+        {selectedActivity === 'Others' && (
+          <input
+            type="text"
+            name="customActivity"
+            placeholder="Enter custom activity"
+            value={customActivity}
+            onChange={handleChange}
+            required
+          />
+        )}
+
         <input type="file" name="proof" onChange={handleChange} required />
-        <button type="submit">Submit SAP</button>
+        <button type="submit">📤 Submit SAP</button>
       </form>
     </div>
   );

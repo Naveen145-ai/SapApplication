@@ -1,9 +1,9 @@
-// src/pages/Notification/Notification.jsx
 import React, { useEffect, useState } from 'react';
-
+import { Link } from 'react-router-dom';
+import './Notification.css'
 const Notification = () => {
   const [notifications, setNotifications] = useState([]);
-  const userEmail = localStorage.getItem('userEmail'); // Set this on login
+  const userEmail = localStorage.getItem('userEmail');
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -23,19 +23,48 @@ const Notification = () => {
   }, [userEmail]);
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Your Notifications</h2>
+    <div style={{ maxWidth: '700px', margin: '30px auto', fontFamily: 'sans-serif' }}>
+      {/* 🔙 Back to Home link */}
+      <div style={{ marginBottom: '15px' }}>
+        <Link to="/home" style={{
+          textDecoration: 'none',
+          color: '#3178c6',
+          fontWeight: 'bold',
+          fontSize: '16px'
+        }}>
+          ← Back to Home
+        </Link>
+      </div>
+
+      <div style={{
+        backgroundColor: '#e7f3fe',
+        padding: '20px',
+        borderRadius: '10px',
+        border: '1px solid #bee0fb',
+        marginBottom: '20px'
+      }}>
+        <h2 style={{ margin: 0, color: '#3178c6' }}>🔔 Submission Notifications</h2>
+      </div>
+
       {notifications.length === 0 ? (
-        <p>No updates yet.</p>
+        <p style={{ textAlign: 'center', fontStyle: 'italic' }}>No updates yet.</p>
       ) : (
-        <ul>
-          {notifications.map((n) => (
-            <li key={n._id} style={{ marginBottom: '10px' }}>
-              <p><strong>Activity:</strong> {n.activity}</p>
-              <p><strong>Status:</strong> {n.status}</p>
-            </li>
-          ))}
-        </ul>
+        notifications.map((n) => (
+          <div key={n._id} style={{
+            backgroundColor: '#f9f9f9',
+            padding: '15px',
+            borderRadius: '8px',
+            marginBottom: '15px',
+            borderLeft: `6px solid ${n.status === 'accepted' ? '#4CAF50' : n.status === 'rejected' ? '#f44336' : '#ff9800'}`
+          }}>
+            <p><strong>📌 Activity:</strong> {n.activity}</p>
+            <p><strong>Status:</strong> <span style={{
+              color: n.status === 'accepted' ? 'green' : n.status === 'rejected' ? 'red' : '#ff9800',
+              fontWeight: 'bold',
+              textTransform: 'capitalize'
+            }}>{n.status}</span></p>
+          </div>
+        ))
       )}
     </div>
   );
