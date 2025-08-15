@@ -4,60 +4,68 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f2f2f2;
+  background-color: #f2f8ff; /* light blue background like 2nd image */
   margin: 0;
 }
 
 /* Login box */
 .login {
   background-color: #ffffff;
-  padding: 30px 40px;
+  padding: 20px 35px; /* further reduced padding */
   border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-  width: 350px;
-  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  width: 500px; /* wider container */
+  text-align: left; /* keep fields aligned left */
 }
 
 /* Form heading */
 .login h1 {
-  margin-bottom: 25px;
-  color: #333;
-  font-size: 24px;
+  margin-bottom: 12px; /* further reduced from 15px */
+  color: #1e40af; /* blue heading */
+  font-size: 26px;
+  text-align: center;
 }
 
 /* Input group */
 .login label {
   display: block;
   text-align: left;
-  margin-bottom: 6px;
+  margin-bottom: 3px; /* further reduced from 4px */
   font-weight: 500;
   color: #555;
 }
 
 .login input {
   width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 20px;
+  padding: 8px; /* further reduced from 10px */
+  margin-bottom: 8px; /* further reduced from 12px */
   border: 1px solid #ccc;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 15px;
   box-sizing: border-box;
 }
 
-/* Optional: add a login button */
+/* Sign Up button */
 .login button {
   width: 100%;
-  padding: 12px;
-  background-color: #007bff;
+  padding: 10px; /* keep button padding for good clickability */
+  background-color: #2563eb; /* blue like 2nd image */
   border: none;
   color: white;
   font-weight: bold;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 17px;
   transition: background 0.3s ease;
+  margin-bottom: 6px; /* reduced from 8px */
 }
 
 .login button:hover {
-  background-color: #0056b3;
+  background-color: #1e40af;
+}
+
+/* Login link styling */
+.login p {
+  margin-top: 5px; /* reduced from default to lift text up */
+  text-align: center;
 }

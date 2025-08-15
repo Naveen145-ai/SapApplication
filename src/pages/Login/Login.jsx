@@ -22,12 +22,11 @@ const Login = () => {
 
       const data = await res.json();
 
-    if (res.ok) {
-  // Save mentor's email and role
-  localStorage.setItem('userEmail', email);
-  navigate('/home');
-}
- else {
+      if (res.ok) {
+        // Save user email
+        localStorage.setItem('userEmail', email);
+        navigate('/home');
+      } else {
         alert(data.message || 'Login failed');
       }
     } catch (error) {
@@ -39,7 +38,7 @@ const Login = () => {
   return (
     <div className='container'>
       <div className='login'>
-        <h1>Login Form</h1>
+        <h1>Mentee Login Form</h1>
         <form onSubmit={handleLogin}>
           <label>Email: </label>
           <input
@@ -59,6 +58,17 @@ const Login = () => {
 
           <button type="submit">Login</button>
         </form>
+
+        {/* Link to Sign Up */}
+        <p style={{ marginTop: '10px' }}>
+          Don’t have an account?{' '}
+          <span
+            onClick={() => navigate('/')}
+            style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            Sign Up here
+          </span>
+        </p>
       </div>
     </div>
   );
