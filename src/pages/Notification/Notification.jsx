@@ -26,7 +26,7 @@ const Notification = () => {
     <div style={{ maxWidth: '700px', margin: '30px auto', fontFamily: 'sans-serif' }}>
       {/* 🔙 Back to Home link */}
       <div style={{ marginBottom: '15px' }}>
-        <Link to="/home" style={{
+        <Link to="/" style={{
           textDecoration: 'none',
           color: '#3178c6',
           fontWeight: 'bold',
