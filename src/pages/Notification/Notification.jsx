@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import './Notification.css'
 const Notification = () => {
   const [notifications, setNotifications] = useState([]);
+  const [profile, setProfile] = useState(null);
   const userEmail = localStorage.getItem('userEmail');
 
   useEffect(() => {
@@ -17,8 +18,19 @@ const Notification = () => {
       }
     };
 
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch(`http://localhost:8080/api/sap/profile/${userEmail}`);
+        const data = await res.json();
+        if (res.ok) setProfile(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
     if (userEmail) {
       fetchNotifications();
+      fetchProfile();
     }
   }, [userEmail]);
 
@@ -44,6 +56,11 @@ const Notification = () => {
         marginBottom: '20px'
       }}>
         <h2 style={{ margin: 0, color: '#3178c6' }}>🔔 Submission Notifications</h2>
+        {profile && (
+          <p style={{ margin: '8px 0 0 0', color: '#1f2937' }}>
+            Current SAP Points: <strong>{profile.sapPoints || 0}</strong>
+          </p>
+        )}
       </div>
 
       {notifications.length === 0 ? (
@@ -63,6 +80,12 @@ const Notification = () => {
               fontWeight: 'bold',
               textTransform: 'capitalize'
             }}>{n.status}</span></p>
+            {n.status !== 'pending' && (
+              <>
+                <p><strong>Marks Awarded:</strong> {n.marksAwarded || 0}</p>
+                {n.decisionNote && <p><strong>Note:</strong> {n.decisionNote}</p>}
+              </>
+            )}
           </div>
         ))
       )}
