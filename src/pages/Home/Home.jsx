@@ -14,6 +14,7 @@ const Home = () => {
     studentEmail: localStorage.getItem('userEmail') || '',
     mentorEmail: ''
   });
+  const [proofFiles, setProofFiles] = useState([]);
 
   const handleBasicInfoChange = (field, value) => {
     setFormData(prev => ({
@@ -52,11 +53,17 @@ const Home = () => {
       mentorEmail: formData.mentorEmail
     };
 
+    const fd = new FormData();
+    fd.append('studentInfo', JSON.stringify(studentInfo));
+    fd.append('tableData', JSON.stringify(tableData));
+    fd.append('mentorEmail', formData.mentorEmail);
+    fd.append('email', formData.studentEmail);
+    (proofFiles || []).forEach(f => fd.append('proofs', f));
+
     try {
       const res = await fetch('http://localhost:8080/api/sap/submit-full', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentInfo, tableData, mentorEmail: formData.mentorEmail, email: formData.studentEmail })
+        body: fd
       });
       const data = await res.json();
       if (res.ok) {
@@ -112,6 +119,10 @@ const Home = () => {
                 onChange={(e) => handleBasicInfoChange('mentorEmail', e.target.value)}
                 placeholder="mentor.email@example.com"
               />
+            </div>
+            <div className="info-item">
+              <label>Attach Proofs (images/PDFs, multiple)</label>
+              <input type="file" multiple accept=".png,.jpg,.jpeg,.pdf" onChange={(e) => setProofFiles(Array.from(e.target.files || []))} />
             </div>
             <div className="info-item">
               <label>Action</label>
