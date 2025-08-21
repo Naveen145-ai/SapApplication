@@ -10,7 +10,9 @@ const Home = () => {
     section: '',
     semester: '',
     academicYear: '',
-    mentorName: ''
+    mentorName: '',
+    studentEmail: localStorage.getItem('userEmail') || '',
+    mentorEmail: ''
   });
 
   const handleBasicInfoChange = (field, value) => {
@@ -18,6 +20,54 @@ const Home = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  // Serialize all inputs from each .activity-section into a lightweight structure
+  const collectTableData = () => {
+    const sections = Array.from(document.querySelectorAll('.activity-section'));
+    const payload = sections.map((section, sectionIndex) => {
+      const title = section.querySelector('h4')?.innerText || `Section ${sectionIndex + 1}`;
+      const inputs = Array.from(section.querySelectorAll('input'));
+      const values = inputs.map((input, idx) => ({ index: idx, placeholder: input.getAttribute('placeholder') || '', value: input.value }));
+      return { section: title, values };
+    });
+    return payload;
+  };
+
+  const handleSubmitFullForm = async () => {
+    if (!formData.mentorEmail) {
+      alert('Enter mentor email');
+      return;
+    }
+    const tableData = collectTableData();
+    const studentInfo = {
+      studentName: formData.studentName,
+      rollNumber: formData.rollNumber,
+      year: formData.year,
+      section: formData.section,
+      semester: formData.semester,
+      academicYear: formData.academicYear,
+      mentorName: formData.mentorName,
+      studentEmail: formData.studentEmail,
+      mentorEmail: formData.mentorEmail
+    };
+
+    try {
+      const res = await fetch('http://localhost:8080/api/sap/submit-full', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentInfo, tableData, mentorEmail: formData.mentorEmail, email: formData.studentEmail })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Submitted to mentor successfully');
+      } else {
+        alert(data.error || 'Submission failed');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Network error while submitting');
+    }
   };
 
   return (
@@ -39,6 +89,35 @@ const Home = () => {
           <h1>KONGU ENGINEERING COLLEGE, PERUNDURAI, ERODE—638060</h1>
           <h2>DEPARTMENT OF COMPUTER SCIENCE ENGINEERING</h2>
           <h3>STUDENT ACTIVITY POINTS INDEX</h3>
+        </div>
+
+        {/* Submission Controls */}
+        <div className="student-info-section">
+          <h4>Delivery</h4>
+          <div className="info-grid">
+            <div className="info-item">
+              <label>Student Email:</label>
+              <input
+                type="email"
+                value={formData.studentEmail}
+                onChange={(e) => handleBasicInfoChange('studentEmail', e.target.value)}
+                placeholder="your.email@example.com"
+              />
+            </div>
+            <div className="info-item">
+              <label>Mentor Email (must match a registered mentor):</label>
+              <input
+                type="email"
+                value={formData.mentorEmail}
+                onChange={(e) => handleBasicInfoChange('mentorEmail', e.target.value)}
+                placeholder="mentor.email@example.com"
+              />
+            </div>
+            <div className="info-item">
+              <label>Action</label>
+              <button type="button" className="submit-btn" onClick={handleSubmitFullForm}>Submit to Mentor</button>
+            </div>
+          </div>
         </div>
 
         {/* Student Information */}
@@ -1036,7 +1115,7 @@ const Home = () => {
 
         {/* Submit Button */}
         <div className="submit-section">
-          <button type="submit" className="submit-btn">Submit SAP Form</button>
+          <button type="button" className="submit-btn" onClick={handleSubmitFullForm}>Submit SAP Form</button>
         </div>
 
         {/* Mentor Signature */}
