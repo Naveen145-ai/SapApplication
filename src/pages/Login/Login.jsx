@@ -23,9 +23,17 @@ const Login = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // Save user email
+        // Save user data including role
         localStorage.setItem('userEmail', email);
-        navigate('/home');
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userName', data.user.name);
+        
+        // Route based on role
+        if (data.user.role === 'mentor') {
+          window.location.href = 'http://localhost:3001'; // Mentor dashboard
+        } else {
+          navigate('/home'); // Student dashboard
+        }
       } else {
         alert(data.message || 'Login failed');
       }
@@ -38,7 +46,7 @@ const Login = () => {
   return (
     <div className='container'>
       <div className='login'>
-        <h1>Mentee Login Form</h1>
+        <h1>SAP Login Form</h1>
         <form onSubmit={handleLogin}>
           <label>Email: </label>
           <input
