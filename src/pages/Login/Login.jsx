@@ -63,7 +63,7 @@ const Login = () => {
         <p style={{ marginTop: '10px' }}>
           Don’t have an account?{' '}
           <span
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/signup')}
             style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
           >
             Sign Up here

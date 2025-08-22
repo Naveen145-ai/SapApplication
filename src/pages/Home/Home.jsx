@@ -86,7 +86,17 @@ const Home = () => {
         </div>
         <div className="nav-links">
           <Link to="/home" className="nav-link active">📋 SAP Form</Link>
-          <Link to="/notification" className="nav-link">🔔 Notifications</Link>
+          <Link to="/events-form" className="nav-link">🎯 Individual Events</Link>
+          <Link to="/marks-view" className="nav-link">📊 My Marks</Link>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('userEmail');
+              window.location.href = '/login';
+            }}
+            className="nav-link logout-btn"
+          >
+            🚪 Logout
+          </button>
         </div>
       </nav>
 
