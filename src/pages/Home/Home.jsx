@@ -794,46 +794,35 @@ const Home = () => {
                 <tr>
                   <th rowSpan="2">Activity</th>
                   <th colSpan="2">SCI Indexed</th>
-                  <th colSpan="2">WOS/Scopus Journal/Conference</th>
-                  <th>Other Journal/Conference</th>
-                  <th colSpan="3">Patent</th>
-                  <th colSpan="2">Copyright</th>
-                  <th rowSpan="2">Max Points</th>
+                  <th>Scopus Indexed</th>
+                  <th>UGC Indexed</th>
+                  <th>Patent</th>
+                  <th>Copyright</th>
+                  <th>Max Points</th>
                 </tr>
                 <tr>
-                  <th>Submitted</th>
-                  <th>Published</th>
-                  <th>Submitted</th>
-                  <th>Published</th>
+                  <th>International</th>
+                  <th>National</th>
+                  <th>International</th>
+                  <th>National</th>
+                  <th>Filed</th>
+                  <th>Granted</th>
                   <th></th>
-                  <th>Applied</th>
-                  <th>Published</th>
-                  <th>Obtained</th>
-                  <th>Applied</th>
-                  <th>Published</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>8. Project to Paper/Patent/Copyright</td>
-                  <td>10</td>
-                  <td>50</td>
-                  <td>10</td>
-                  <td>30</td>
-                  <td>5</td>
-                  <td>10</td>
-                  <td>20</td>
                   <td>100</td>
-                  <td>05</td>
-                  <td>10</td>
+                  <td>80</td>
+                  <td>60</td>
+                  <td>40</td>
+                  <td>50</td>
+                  <td>100</td>
                   <td>100</td>
                 </tr>
                 <tr>
                   <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
                   <td><input type="number" placeholder="Count" /></td>
                   <td><input type="number" placeholder="Count" /></td>
                   <td><input type="number" placeholder="Count" /></td>
@@ -850,10 +839,6 @@ const Home = () => {
                   <td><input type="number" placeholder="Marks" /></td>
                   <td><input type="number" placeholder="Marks" /></td>
                   <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
                   <td></td>
                 </tr>
                 <tr>
@@ -864,18 +849,10 @@ const Home = () => {
                   <td><input type="number" placeholder="Marks" /></td>
                   <td><input type="number" placeholder="Marks" /></td>
                   <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
                   <td></td>
                 </tr>
                 <tr>
                   <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
                   <td><input type="number" placeholder="Page" /></td>
                   <td><input type="number" placeholder="Page" /></td>
                   <td><input type="number" placeholder="Page" /></td>
