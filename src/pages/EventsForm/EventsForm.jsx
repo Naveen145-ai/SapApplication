@@ -12,7 +12,7 @@ const EventsForm = () => {
     academicYear: '',
     mentorName: '',
     studentEmail: localStorage.getItem('userEmail') || '',
-    mentorEmail: ''
+    mentorEmail: 'mugilanks.23cse@kongu.edu' // Auto-assign your mentor email
   });
 
   // State for each event's data and files
@@ -433,7 +433,10 @@ const EventsForm = () => {
                 value={formData.mentorEmail}
                 onChange={(e) => handleBasicInfoChange('mentorEmail', e.target.value)}
                 placeholder="mentor.email@example.com"
+                readOnly
+                style={{ backgroundColor: '#f0f0f0', color: '#666' }}
               />
+              <small style={{ color: '#666', fontSize: '12px' }}>Auto-assigned mentor</small>
             </div>
             <div className="info-item">
               <label>Year:</label>
