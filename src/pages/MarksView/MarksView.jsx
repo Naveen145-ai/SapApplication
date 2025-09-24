@@ -112,14 +112,20 @@ const MarksView = () => {
                         </span>
                       </div>
 
-                      {event.values && (
+                      {event.eventData && (
                         <div className="event-data">
                           <h6>Submitted Data:</h6>
                           <div className="data-grid">
-                            {Object.entries(event.values).map(([key, value]) => (
-                              <div key={key} className="data-item">
-                                <span className="data-label">{key}:</span>
-                                <span className="data-value">{value}</span>
+                            {event.eventData.counts && Object.entries(event.eventData.counts).map(([key, value]) => (
+                              <div key={`count-${key}`} className="data-item">
+                                <span className="data-label">{key} (Count):</span>
+                                <span className="data-value">{String(value || 0)}</span>
+                              </div>
+                            ))}
+                            {event.eventData.studentMarks && Object.entries(event.eventData.studentMarks).map(([key, value]) => (
+                              <div key={`marks-${key}`} className="data-item">
+                                <span className="data-label">{key} (Student Marks):</span>
+                                <span className="data-value">{String(value || 0)}</span>
                               </div>
                             ))}
                           </div>
@@ -133,12 +139,17 @@ const MarksView = () => {
                             {Object.entries(event.mentorMarks).map(([key, mark]) => (
                               <div key={key} className="mark-item">
                                 <span>{key}:</span>
-                                <span className="mark-value">{mark} pts</span>
+                                <span className="mark-value">
+                                  {typeof mark === 'object' ? JSON.stringify(mark) : String(mark)} pts
+                                </span>
                               </div>
                             ))}
                           </div>
                           <div className="total-event-marks">
-                            Total: {Object.values(event.mentorMarks).reduce((sum, mark) => sum + (Number(mark) || 0), 0)} points
+                            Total: {Object.values(event.mentorMarks).reduce((sum, mark) => {
+                              const numMark = typeof mark === 'object' ? 0 : Number(mark);
+                              return sum + (numMark || 0);
+                            }, 0)} points
                           </div>
                           {event.mentorNote && (
                             <div className="mentor-note">

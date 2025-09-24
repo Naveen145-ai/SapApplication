@@ -1,0 +1,199 @@
+.total-marks-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.total-marks-section h4 {
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.marks-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.marks-input-section {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+}
+
+.marks-input-section label {
+  display: block;
+  font-weight: bold;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.total-marks-input {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  text-align: center;
+  background: white;
+}
+
+.total-marks-input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.marks-info {
+  background: #f0f9ff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px solid #0ea5e9;
+}
+
+.marks-info h5 {
+  color: #0369a1;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.activity-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.activity-item {
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #374151;
+  border-left: 3px solid #0ea5e9;
+}
+
+.marks-reference {
+  background: #fef3c7;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px solid #f59e0b;
+}
+
+.marks-reference h5 {
+  color: #d97706;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.reference-table {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ref-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.ref-range {
+  font-weight: bold;
+  color: #374151;
+}
+
+.ref-marks {
+  color: #059669;
+  font-weight: bold;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.detail-btn {
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail-btn:hover {
+  transform: translateY(-2px);
+}
+
+.submit-btn {
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.note-section {
+  background: #f3f4f6;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #6b7280;
+  margin-top: 2rem;
+}
+
+.note-section p {
+  margin: 0;
+  color: #4b5563;
+  font-style: italic;
+}
+
+@media (max-width: 1024px) {
+  .marks-card {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .detail-btn,
+  .submit-btn {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
+  }
+}

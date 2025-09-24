@@ -29,7 +29,13 @@ const Home = () => {
     const payload = sections.map((section, sectionIndex) => {
       const title = section.querySelector('h4')?.innerText || `Section ${sectionIndex + 1}`;
       const inputs = Array.from(section.querySelectorAll('input'));
-      const values = inputs.map((input, idx) => ({ index: idx, placeholder: input.getAttribute('placeholder') || '', value: input.value }));
+      const values = inputs
+        .filter(input => input !== null) // Filter out null inputs
+        .map((input, idx) => ({ 
+          index: idx, 
+          placeholder: input.getAttribute('placeholder') || '', 
+          value: input.value || '' // Provide default empty string if value is null
+        }));
       return { section: title, values };
     });
     return payload;
