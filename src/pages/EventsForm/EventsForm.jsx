@@ -54,13 +54,53 @@ const EventsForm = () => {
   };
 
   const handleFileUpload = (eventKey, categoryKey, files) => { // ✅ Add categoryKey parameter
+    setEventData(prev => {
+      const existingFiles = prev[eventKey].files[categoryKey] || [];
+      const newFiles = Array.from(files);
+      // ✅ Append new files to existing files (avoid duplicates by checking name and size)
+      const combinedFiles = [...existingFiles];
+      newFiles.forEach(newFile => {
+        const isDuplicate = existingFiles.some(
+          existing => existing.name === newFile.name && existing.size === newFile.size
+        );
+        if (!isDuplicate) {
+          combinedFiles.push(newFile);
+        }
+      });
+      return {
+        ...prev,
+        [eventKey]: {
+          ...prev[eventKey],
+          files: {
+            ...prev[eventKey].files,
+            [categoryKey]: combinedFiles // ✅ Append files instead of replacing
+          }
+        }
+      };
+    });
+  };
+
+  const removeFile = (eventKey, categoryKey, fileIndex) => {
     setEventData(prev => ({
       ...prev,
       [eventKey]: {
         ...prev[eventKey],
         files: {
           ...prev[eventKey].files,
-          [categoryKey]: Array.from(files) // ✅ Store files per category
+          [categoryKey]: prev[eventKey].files[categoryKey].filter((_, idx) => idx !== fileIndex)
+        }
+      }
+    }));
+  };
+
+  const clearCategoryFiles = (eventKey, categoryKey) => {
+    setEventData(prev => ({
+      ...prev,
+      [eventKey]: {
+        ...prev[eventKey],
+        files: {
+          ...prev[eventKey].files,
+          [categoryKey]: []
         }
       }
     }));
@@ -207,25 +247,116 @@ const EventsForm = () => {
                   ))}
                   <td></td>
                 </tr>
-                {/* ✅ NEW ROW: File Upload per Category */}
+                {/* ✅ NEW ROW: File Upload per Category - Multiple files allowed */}
                 <tr>
-                  <td>Upload Proofs</td>
-                  {columns.map((col, idx) => (
-                    <td key={idx}>
-                      <input
-                        type="file"
-                        multiple
-                        accept=".png,.jpg,.jpeg,.pdf,.doc,.docx"
-                        onChange={(e) => handleFileUpload(eventKey, col.key, e.target.files)}
-                        style={{ fontSize: '11px', width: '100%' }}
-                      />
-                      {(event.files[col.key] || []).length > 0 && (
-                        <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
-                          {event.files[col.key].length} file(s)
+                  <td style={{ verticalAlign: 'top' }}>
+                    Upload Proofs<br/>
+                    <span style={{ fontSize: '9px', color: '#007bff', fontWeight: 'bold' }}>
+                      📎 Select multiple files<br/>
+                      (Hold Ctrl/Cmd to select multiple)
+                    </span>
+                  </td>
+                  {columns.map((col, idx) => {
+                    const categoryFiles = event.files[col.key] || [];
+                    const fileInputId = `file-input-${eventKey}-${col.key}-${idx}`;
+                    return (
+                      <td key={idx} style={{ verticalAlign: 'top', padding: '8px' }}>
+                        <div style={{ border: '1px dashed #ccc', padding: '8px', borderRadius: '4px', backgroundColor: categoryFiles.length > 0 ? '#f0f8ff' : '#fafafa' }}>
+                          <label htmlFor={fileInputId} style={{ cursor: 'pointer', display: 'block' }}>
+                            <input
+                              id={fileInputId}
+                              type="file"
+                              multiple
+                              accept=".png,.jpg,.jpeg,.pdf,.doc,.docx"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                  handleFileUpload(eventKey, col.key, e.target.files);
+                                  // Reset input to allow selecting same files again
+                                  e.target.value = '';
+                                }
+                              }}
+                              style={{ 
+                                fontSize: '10px', 
+                                width: '100%', 
+                                marginBottom: '5px',
+                                cursor: 'pointer',
+                                padding: '4px'
+                              }}
+                            />
+                          </label>
+                          {categoryFiles.length === 0 ? (
+                            <div style={{ fontSize: '9px', color: '#666', textAlign: 'center', fontStyle: 'italic' }}>
+                              Click to select files<br/>
+                              (You can select multiple)
+                            </div>
+                          ) : (
+                            <>
+                              <div style={{ fontSize: '10px', color: '#28a745', marginTop: '4px', fontWeight: 'bold', marginBottom: '5px', textAlign: 'center' }}>
+                                ✓ {categoryFiles.length} file{categoryFiles.length !== 1 ? 's' : ''} uploaded
+                              </div>
+                              <div style={{ fontSize: '9px', color: '#007bff', marginBottom: '5px', textAlign: 'center', fontStyle: 'italic' }}>
+                                Click above to add more files
+                              </div>
+                              <div style={{ marginTop: '5px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => clearCategoryFiles(eventKey, col.key)}
+                                  style={{
+                                    fontSize: '9px',
+                                    padding: '3px 8px',
+                                    background: '#dc3545',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '3px',
+                                    cursor: 'pointer',
+                                    marginBottom: '5px',
+                                    width: '100%'
+                                  }}
+                                >
+                                  🗑️ Clear All ({categoryFiles.length})
+                                </button>
+                                <div style={{ maxHeight: '100px', overflowY: 'auto', marginTop: '5px', border: '1px solid #ddd', borderRadius: '3px', padding: '5px', backgroundColor: 'white' }}>
+                                  {categoryFiles.map((file, fileIdx) => (
+                                    <div key={fileIdx} style={{ 
+                                      fontSize: '9px', 
+                                      marginBottom: '4px', 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      gap: '5px',
+                                      padding: '3px',
+                                      backgroundColor: '#f9f9f9',
+                                      borderRadius: '2px'
+                                    }}>
+                                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={file.name}>
+                                        📄 {file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeFile(eventKey, col.key, fileIdx)}
+                                        style={{
+                                          fontSize: '10px',
+                                          padding: '2px 6px',
+                                          background: '#ffc107',
+                                          color: '#000',
+                                          border: 'none',
+                                          borderRadius: '3px',
+                                          cursor: 'pointer',
+                                          fontWeight: 'bold'
+                                        }}
+                                        title={`Remove ${file.name}`}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
-                      )}
-                    </td>
-                  ))}
+                      </td>
+                    );
+                  })}
                   <td></td>
                 </tr>
               </tbody>
