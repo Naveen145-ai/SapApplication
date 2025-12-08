@@ -23,13 +23,13 @@ const Login = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // Save user data including role
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('userRole', data.user.role);
-        localStorage.setItem('userName', data.user.name);
+        // ✅ Fix: Use data.email and data.role directly (not nested in data.user)
+        localStorage.setItem('userEmail', data.email || email);
+        localStorage.setItem('userRole', data.role);
+        localStorage.setItem('userName', data.name || ''); // name might not be in response
         
         // Route based on role
-        if (data.user.role === 'mentor') {
+        if (data.role === 'mentor') {
           window.location.href = 'http://localhost:3001'; // Mentor dashboard
         } else {
           navigate('/home'); // Student dashboard
@@ -38,7 +38,7 @@ const Login = () => {
         alert(data.message || 'Login failed');
       }
     } catch (error) {
-      alert('Server error');
+      alert('Server error: ' + (error.message || 'Unable to connect to server'));
       console.error(error);
     }
   };
