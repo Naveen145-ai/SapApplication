@@ -15,20 +15,20 @@ const EventsForm = () => {
     mentorEmail: ''
   });
 
-  // State for each event's data and files
+  // State for each event's data and files - CHANGE STRUCTURE
   const [eventData, setEventData] = useState({
-    paperPresentation: { counts: {}, studentMarks: {}, files: [] },
-    projectPresentation: { counts: {}, studentMarks: {}, files: [] },
-    technoManagerial: { counts: {}, studentMarks: {}, files: [] },
-    sportsGames: { counts: {}, studentMarks: {}, files: [] },
-    membership: { counts: {}, studentMarks: {}, files: [] },
-    leadership: { counts: {}, studentMarks: {}, files: [] },
-    vacOnline: { counts: {}, studentMarks: {}, files: [] },
-    projectPaper: { counts: {}, studentMarks: {}, files: [] },
-    gateExams: { counts: {}, studentMarks: {}, files: [] },
-    internship: { counts: {}, studentMarks: {}, files: [] },
-    entrepreneurship: { counts: {}, studentMarks: {}, files: [] },
-    miscellaneous: { counts: {}, studentMarks: {}, files: [] }
+    paperPresentation: { counts: {}, studentMarks: {}, files: {} }, // files is now an object
+    projectPresentation: { counts: {}, studentMarks: {}, files: {} },
+    technoManagerial: { counts: {}, studentMarks: {}, files: {} },
+    sportsGames: { counts: {}, studentMarks: {}, files: {} },
+    membership: { counts: {}, studentMarks: {}, files: {} },
+    leadership: { counts: {}, studentMarks: {}, files: {} },
+    vacOnline: { counts: {}, studentMarks: {}, files: {} },
+    projectPaper: { counts: {}, studentMarks: {}, files: {} },
+    gateExams: { counts: {}, studentMarks: {}, files: {} },
+    internship: { counts: {}, studentMarks: {}, files: {} },
+    entrepreneurship: { counts: {}, studentMarks: {}, files: {} },
+    miscellaneous: { counts: {}, studentMarks: {}, files: {} }
   });
 
   const [submissionStatus, setSubmissionStatus] = useState({});
@@ -53,12 +53,15 @@ const EventsForm = () => {
     }));
   };
 
-  const handleFileUpload = (eventKey, files) => {
+  const handleFileUpload = (eventKey, categoryKey, files) => { // ✅ Add categoryKey parameter
     setEventData(prev => ({
       ...prev,
       [eventKey]: {
         ...prev[eventKey],
-        files: Array.from(files)
+        files: {
+          ...prev[eventKey].files,
+          [categoryKey]: Array.from(files) // ✅ Store files per category
+        }
       }
     }));
   };
@@ -70,7 +73,10 @@ const EventsForm = () => {
     }
 
     const event = eventData[eventKey];
-    if (event.files.length === 0) {
+    
+    // ✅ Check if at least one category has files
+    const hasFiles = Object.values(event.files || {}).some(fileArray => fileArray && fileArray.length > 0);
+    if (!hasFiles) {
       alert(`Please upload at least one file for ${eventTitle}`);
       return;
     }
@@ -86,8 +92,13 @@ const EventsForm = () => {
     fd.append('mentorEmail', formData.mentorEmail);
     fd.append('email', formData.studentEmail);
 
-    event.files.forEach(file => {
-      fd.append(`proofs[${eventKey}]`, file);
+    // ✅ Append files for each category
+    Object.entries(event.files || {}).forEach(([categoryKey, files]) => {
+      if (files && files.length > 0) {
+        files.forEach((file, idx) => {
+          fd.append(`proofs[${eventKey}][${categoryKey}]`, file); // ✅ Include category in file naming
+        });
+      }
     });
 
     try {
@@ -144,9 +155,27 @@ const EventsForm = () => {
                 <tr>
                   <td>Points</td>
                   {columns.map((col, idx) => (
-                    <td key={idx}>{col.points}</td>
+                    <td key={idx}>
+                      <input
+                        type="number"
+                        placeholder="Points"
+                        min="0"
+                        value={col.points}
+                        readOnly
+                        style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '60px' }}
+                      />
+                    </td>
                   ))}
-                  <td>{maxPoints}</td>
+                  <td>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      min="0"
+                      value={maxPoints}
+                      readOnly
+                      style={{ border: 'none', background: 'transparent', textAlign: 'center', width: '60px' }}
+                    />
+                  </td>
                 </tr>
                 <tr>
                   <td>Count</td>
@@ -178,33 +207,51 @@ const EventsForm = () => {
                   ))}
                   <td></td>
                 </tr>
+                {/* ✅ NEW ROW: File Upload per Category */}
+                <tr>
+                  <td>Upload Proofs</td>
+                  {columns.map((col, idx) => (
+                    <td key={idx}>
+                      <input
+                        type="file"
+                        multiple
+                        accept=".png,.jpg,.jpeg,.pdf,.doc,.docx"
+                        onChange={(e) => handleFileUpload(eventKey, col.key, e.target.files)}
+                        style={{ fontSize: '11px', width: '100%' }}
+                      />
+                      {(event.files[col.key] || []).length > 0 && (
+                        <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+                          {event.files[col.key].length} file(s)
+                        </div>
+                      )}
+                    </td>
+                  ))}
+                  <td></td>
+                </tr>
               </tbody>
             </table>
           </div>
-
-          <div className="file-upload-section">
+          
+          {/* ✅ Show all uploaded files summary */}
+          <div className="file-upload-section" style={{ marginTop: '15px' }}>
             <div className="upload-area">
-              <label htmlFor={`files-${eventKey}`} className="upload-label">
-                📎 Upload Proof Files for {title}
-              </label>
-              <input
-                id={`files-${eventKey}`}
-                type="file"
-                multiple
-                accept=".png,.jpg,.jpeg,.pdf,.doc,.docx"
-                onChange={(e) => handleFileUpload(eventKey, e.target.files)}
-                className="file-input"
-              />
-              {event.files.length > 0 && (
-                <div className="file-list">
-                  <p>Selected files ({event.files.length}):</p>
-                  <ul>
-                    {event.files.map((file, idx) => (
-                      <li key={idx}>{file.name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <label className="upload-label">📎 Uploaded Files Summary for {title}</label>
+              <div className="file-list">
+                {columns.map((col) => {
+                  const files = event.files[col.key] || [];
+                  if (files.length === 0) return null;
+                  return (
+                    <div key={col.key} style={{ marginBottom: '10px' }}>
+                      <strong>{col.label}:</strong> {files.length} file(s)
+                      <ul style={{ marginLeft: '20px', fontSize: '12px' }}>
+                        {files.map((file, idx) => (
+                          <li key={idx}>{file.name}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             
             <button
