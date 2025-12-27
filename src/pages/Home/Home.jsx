@@ -1,85 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css';
 
 const Home = () => {
-  const [formData, setFormData] = useState({
-    studentName: '',
-    rollNumber: '',
-    year: '',
-    section: '',
-    semester: '',
-    academicYear: '',
-    mentorName: '',
-    studentEmail: localStorage.getItem('userEmail') || '',
-    mentorEmail: ''
-  });
-  const [proofFiles, setProofFiles] = useState([]);
+  const [sapSummary, setSapSummary] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [studentEmail, setStudentEmail] = useState('');
 
-  const handleBasicInfoChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Serialize all inputs from each .activity-section into a lightweight structure
-  const collectTableData = () => {
-    const sections = Array.from(document.querySelectorAll('.activity-section'));
-    const payload = sections.map((section, sectionIndex) => {
-      const title = section.querySelector('h4')?.innerText || `Section ${sectionIndex + 1}`;
-      const inputs = Array.from(section.querySelectorAll('input'));
-      const values = inputs
-        .filter(input => input !== null) // Filter out null inputs
-        .map((input, idx) => ({ 
-          index: idx, 
-          placeholder: input.getAttribute('placeholder') || '', 
-          value: input.value || '' // Provide default empty string if value is null
-        }));
-      return { section: title, values };
-    });
-    return payload;
-  };
-
-  const handleSubmitFullForm = async () => {
-    if (!formData.mentorEmail) {
-      alert('Enter mentor email');
-      return;
+  useEffect(() => {
+    const email = localStorage.getItem('userEmail') || '';
+    setStudentEmail(email);
+    if (email) {
+      fetchSAPSummary(email);
     }
-    const tableData = collectTableData();
-    const studentInfo = {
-      studentName: formData.studentName,
-      rollNumber: formData.rollNumber,
-      year: formData.year,
-      section: formData.section,
-      semester: formData.semester,
-      academicYear: formData.academicYear,
-      mentorName: formData.mentorName,
-      studentEmail: formData.studentEmail,
-      mentorEmail: formData.mentorEmail
-    };
+  }, []);
 
-    const fd = new FormData();
-    fd.append('studentInfo', JSON.stringify(studentInfo));
-    fd.append('tableData', JSON.stringify(tableData));
-    fd.append('mentorEmail', formData.mentorEmail);
-    fd.append('email', formData.studentEmail);
-    (proofFiles || []).forEach(f => fd.append('proofs', f));
-
+  const fetchSAPSummary = async (email) => {
     try {
-      const res = await fetch('http://localhost:8080/api/sap/submit-full', {
-        method: 'POST',
-        body: fd
-      });
+      setLoading(true);
+      const res = await fetch(`http://localhost:8080/api/sap/student-marks/${email}`);
       const data = await res.json();
       if (res.ok) {
-        alert('Submitted to mentor successfully');
-      } else {
-        alert(data.error || 'Submission failed');
+        setSapSummary(data);
       }
-    } catch (e) {
-      console.error(e);
-      alert('Network error while submitting');
+    } catch (err) {
+      console.error('Error fetching SAP summary:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,7 +38,7 @@ const Home = () => {
           <span className="brand-text">SAP Form - Kongu Engineering College</span>
         </div>
         <div className="nav-links">
-          <Link to="/home" className="nav-link active">📋 SAP Form</Link>
+          <Link to="/home" className="nav-link active">📋 SAP Summary</Link>
           <Link to="/events-form" className="nav-link">🎯 Individual Events</Link>
           <Link to="/marks-view" className="nav-link">📊 My Marks</Link>
           <button 
@@ -107,1027 +54,90 @@ const Home = () => {
       </nav>
 
       <div className="form-wrapper">
-        {/* Header */}
         <div className="form-header">
           <h1>KONGU ENGINEERING COLLEGE, PERUNDURAI, ERODE—638060</h1>
           <h2>DEPARTMENT OF COMPUTER SCIENCE ENGINEERING</h2>
-          <h3>STUDENT ACTIVITY POINTS INDEX</h3>
+          <h3>STUDENT ACTIVITY POINTS - SAP SUMMARY</h3>
         </div>
 
-        {/* Submission Controls */}
-        <div className="student-info-section">
-          <h4>Delivery</h4>
-          <div className="info-grid">
-            <div className="info-item">
-              <label>Student Email:</label>
-              <input
-                type="email"
-                value={formData.studentEmail}
-                onChange={(e) => handleBasicInfoChange('studentEmail', e.target.value)}
-                placeholder="your.email@example.com"
-              />
-            </div>
-            <div className="info-item">
-              <label>Mentor Email (must match a registered mentor):</label>
-              <input
-                type="email"
-                value={formData.mentorEmail}
-                onChange={(e) => handleBasicInfoChange('mentorEmail', e.target.value)}
-                placeholder="mentor.email@example.com"
-              />
-            </div>
-            <div className="info-item">
-              <label>Attach Proofs (images/PDFs, multiple)</label>
-              <input type="file" multiple accept=".png,.jpg,.jpeg,.pdf" onChange={(e) => setProofFiles(Array.from(e.target.files || []))} />
-            </div>
-            <div className="info-item">
-              <label>Action</label>
-              <button type="button" className="submit-btn" onClick={handleSubmitFullForm}>Submit to Mentor</button>
-            </div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px' }}>
+            ⏳ Loading SAP Summary...
           </div>
-        </div>
-
-        {/* Student Information */}
-        <div className="student-info-section">
-          <h4>Student Information</h4>
-          <div className="info-grid">
-            <div className="info-item">
-              <label>Student Name:</label>
-              <input 
-                type="text" 
-                value={formData.studentName}
-                onChange={(e) => handleBasicInfoChange('studentName', e.target.value)}
-                placeholder="Enter student name"
-              />
-            </div>
-            <div className="info-item">
-              <label>Roll Number:</label>
-              <input 
-                type="text" 
-                value={formData.rollNumber}
-                onChange={(e) => handleBasicInfoChange('rollNumber', e.target.value)}
-                placeholder="Enter roll number"
-              />
-            </div>
-            <div className="info-item">
-              <label>Year:</label>
-              <input 
-                type="text" 
-                value={formData.year}
-                onChange={(e) => handleBasicInfoChange('year', e.target.value)}
-                placeholder="Enter year"
-              />
-            </div>
-            <div className="info-item">
-              <label>Section:</label>
-              <input 
-                type="text" 
-                value={formData.section}
-                onChange={(e) => handleBasicInfoChange('section', e.target.value)}
-                placeholder="Enter section"
-              />
-            </div>
-            <div className="info-item">
-              <label>Semester:</label>
-              <input 
-                type="text" 
-                value={formData.semester}
-                onChange={(e) => handleBasicInfoChange('semester', e.target.value)}
-                placeholder="Enter semester"
-              />
-            </div>
-            <div className="info-item">
-              <label>Academic Year:</label>
-              <input 
-                type="text" 
-                value={formData.academicYear}
-                onChange={(e) => handleBasicInfoChange('academicYear', e.target.value)}
-                placeholder="Enter academic year"
-              />
-            </div>
-            <div className="info-item">
-              <label>Mentor Name:</label>
-              <input 
-                type="text" 
-                value={formData.mentorName}
-                onChange={(e) => handleBasicInfoChange('mentorName', e.target.value)}
-                placeholder="Enter mentor name"
-              />
+        ) : sapSummary.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#f0f8ff', borderRadius: '8px', marginTop: '20px' }}>
+            <h3>📝 No Submissions Yet</h3>
+            <p>You haven't submitted any activities yet.</p>
+            <Link to="/events-form" style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}>
+              ➜ Go to Individual Events Form to submit activities
+            </Link>
+          </div>
+        ) : (
+          <div className="sap-summary-section" style={{ marginTop: '30px' }}>
+            <h3>📊 Your SAP Submissions</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+              {sapSummary.map((submission, idx) => (
+                <div key={submission._id || idx} style={{ 
+                  border: '1px solid #ddd', 
+                  borderRadius: '8px', 
+                  padding: '15px',
+                  backgroundColor: '#f9f9f9',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ marginBottom: '10px' }}>
+                    <strong style={{ fontSize: '16px' }}>{submission.activity || 'Individual Events'}</strong>
+                  </div>
+                  
+                  {submission.category === 'individualEvents' && submission.events ? (
+                    <div>
+                      {submission.events.map((event, eventIdx) => (
+                        <div key={eventIdx} style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
+                          <div style={{ fontWeight: 'bold', color: '#333' }}>
+                            🎯 {event.title}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                            Status: <span style={{ 
+                              padding: '2px 6px', 
+                              borderRadius: '3px',
+                              backgroundColor: event.status === 'reviewed' ? '#d4edda' : '#fff3cd',
+                              color: event.status === 'reviewed' ? '#155724' : '#856404'
+                            }}>
+                              {event.status || 'pending'}
+                            </span>
+                          </div>
+                          {event.status === 'reviewed' && event.mentorMarks && (
+                            <div style={{ marginTop: '8px', fontSize: '13px', color: '#28a745', fontWeight: 'bold' }}>
+                              ✅ Mentor Evaluated
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '12px', color: '#666' }}>
+                      Status: <span style={{ fontWeight: 'bold' }}>{submission.status}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Reference Table */}
-        <div className="reference-section">
-          <h4>Reference:</h4>
-          <div className="reference-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Activity points earned in a semester</th>
-                  <th>BE/BTech and MSc</th>
-                  <th>80 or More</th>
-                  <th>50-79</th>
-                  <th>20-49</th>
-                  <th>Below 20</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Marks earned per course in the semester</td>
-                  <td></td>
-                  <td>3</td>
-                  <td>2</td>
-                  <td>1</td>
-                  <td>0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Activity Categories Count */}
-        <div className="activity-count-section">
-          <h4>Activity Categories Count</h4>
-          <div className="count-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Professional Societies</th>
-                  <th>Clubs and Associations</th>
-                  <th>Sports</th>
-                  <th>Others</th>
-                  <th>Outside Institution Events</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 1. Paper Presentation */}
-        <div className="activity-section">
-          <h4>1. Paper Presentation</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th rowSpan="2">Activity</th>
-                  <th colSpan="3">Presented</th>
-                  <th colSpan="3">Prize</th>
-                  <th rowSpan="2">Max Points</th>
-                </tr>
-                <tr>
-                  <th>Inside</th>
-                  <th>Outside</th>
-                  <th>Premier</th>
-                  <th>Inside</th>
-                  <th>Outside</th>
-                  <th>Premier</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>1. Paper Presentation</td>
-                  <td>2</td>
-                  <td>5</td>
-                  <td>10</td>
-                  <td>20</td>
-                  <td>30</td>
-                  <td>50</td>
-                  <td>75</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 2. Project Presentation */}
-        <div className="activity-section">
-          <h4>2. Project Presentation</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th rowSpan="2">Activity</th>
-                  <th colSpan="3">Presented</th>
-                  <th colSpan="3">Prize</th>
-                  <th rowSpan="2">Max Points</th>
-                </tr>
-                <tr>
-                  <th>Inside</th>
-                  <th>Outside</th>
-                  <th>Premier</th>
-                  <th>Inside</th>
-                  <th>Outside</th>
-                  <th>Premier</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>2. Project Presentation</td>
-                  <td>5</td>
-                  <td>10</td>
-                  <td>20</td>
-                  <td>20</td>
-                  <td>30</td>
-                  <td>50</td>
-                  <td>100</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 3. Techno Managerial Events */}
-        <div className="activity-section">
-          <h4>3. Techno Managerial Events*</h4>
-          <p className="footnote">*Priority to offline events</p>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th rowSpan="2">Activity</th>
-                  <th colSpan="4">Participated</th>
-                  <th colSpan="4">Prizes</th>
-                  <th rowSpan="2">Max Points</th>
-                </tr>
-                <tr>
-                  <th>Inside</th>
-                  <th>Outside</th>
-                  <th>State</th>
-                  <th>National/International</th>
-                  <th>Inside</th>
-                  <th>Outside</th>
-                  <th>State</th>
-                  <th>National/International</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>3. Techno Managerial Events</td>
-                  <td>2</td>
-                  <td>5</td>
-                  <td>10</td>
-                  <td>20</td>
-                  <td>10</td>
-                  <td>20</td>
-                  <td>30</td>
-                  <td>50</td>
-                  <td>75</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 4. Sports & Games */}
-        <div className="activity-section">
-          <h4>4. Sports & Games</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th rowSpan="2">Activity</th>
-                  <th colSpan="4">Participated</th>
-                  <th colSpan="4">Prizes</th>
-                  <th rowSpan="2">Max Points</th>
-                </tr>
-                <tr>
-                  <th>Inside</th>
-                  <th>Zone/Outside</th>
-                  <th>State/Inter Zone</th>
-                  <th>National/International</th>
-                  <th>Inside</th>
-                  <th>Zone/Outside</th>
-                  <th>State/Inter Zone</th>
-                  <th>National/International</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>4. Sports & Games</td>
-                  <td>2</td>
-                  <td>10</td>
-                  <td>20</td>
-                  <td>50/100</td>
-                  <td>5</td>
-                  <td>20</td>
-                  <td>40</td>
-                  <td>100</td>
-                  <td>100</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 5. Membership */}
-        <div className="activity-section">
-          <h4>5. Membership</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Activity</th>
-                  <th>NCC / NSS</th>
-                  <th>Professional Society</th>
-                  <th>Clubs</th>
-                  <th>Max Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>5. Membership</td>
-                  <td>20</td>
-                  <td>5</td>
-                  <td>2</td>
-                  <td>50</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 6. Leadership/Organizing Events */}
-        <div className="activity-section">
-          <h4>6. Leadership/Organizing Events</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Activity</th>
-                  <th>Chairman/Secretary/Treasurer etc.</th>
-                  <th>Joint Secretary/Vice Chairman etc.</th>
-                  <th>EC Member</th>
-                  <th>Class Representative/Placement Coordinator/Cell Coordinator/IV or IPT Coordinator</th>
-                  <th>Max Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>6. Leadership/Organizing Events</td>
-                  <td>30</td>
-                  <td>20</td>
-                  <td>10</td>
-                  <td>10</td>
-                  <td>100</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 7. VAC/Online Courses */}
-        <div className="activity-section">
-          <h4>7. VAC/Online Courses</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Activity</th>
-                  <th>Value Added Course (Non-credit courses)</th>
-                  <th>Physical (Industry Collaboration)/Online Courses like NPTEL, etc.</th>
-                  <th></th>
-                  <th></th>
-                  <th>Max Points</th>
-                </tr>
-                <tr>
-                  <th></th>
-                  <th></th>
-                  <th>One Credit Courses</th>
-                  <th>Two Credit Courses</th>
-                  <th>More than two credit courses</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>7. VAC/Online Courses</td>
-                  <td>05</td>
-                  <td>10</td>
-                  <td>20</td>
-                  <td>30</td>
-                  <td>100</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 8. Project to Paper/Patent/Copyright */}
-        <div className="activity-section">
-          <h4>8. Project to Paper/Patent/Copyright</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th rowSpan="2">Activity</th>
-                  <th colSpan="2">SCI Indexed</th>
-                  <th>Scopus Indexed</th>
-                  <th>UGC Indexed</th>
-                  <th>Patent</th>
-                  <th>Copyright</th>
-                  <th>Max Points</th>
-                </tr>
-                <tr>
-                  <th>International</th>
-                  <th>National</th>
-                  <th>International</th>
-                  <th>National</th>
-                  <th>Filed</th>
-                  <th>Granted</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>8. Project to Paper/Patent/Copyright</td>
-                  <td>100</td>
-                  <td>80</td>
-                  <td>60</td>
-                  <td>40</td>
-                  <td>50</td>
-                  <td>100</td>
-                  <td>100</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 9. GATE/CAT/Govt Exams */}
-        <div className="activity-section">
-          <h4>9. GATE/CAT/Govt Exams</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Activity</th>
-                  <th>Appeared</th>
-                  <th>Qualified in GATE/CAT etc.</th>
-                  <th>Good National ranking in GATE/CAT etc.</th>
-                  <th>Cleared Govt Exams</th>
-                  <th>Max Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>9. GATE/CAT/Govt Exams</td>
-                  <td>5</td>
-                  <td>30</td>
-                  <td>100</td>
-                  <td>100</td>
-                  <td>100</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 10. Placement and Internship */}
-        <div className="activity-section">
-          <h4>10. Placement and Internship</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Activity</th>
-                  <th>Written Test cleared</th>
-                  <th>Placed</th>
-                  <th>Placed with Internship</th>
-                  <th>Internship without Placement</th>
-                  <th>Max Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>10. Placement and Internship</td>
-                  <td>5 (max 20)</td>
-                  <td>40</td>
-                  <td>50</td>
-                  <td>20</td>
-                  <td>50</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 11. Entrepreneurship */}
-        <div className="activity-section">
-          <h4>11. Entrepreneurship</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Activity</th>
-                  <th>Workshop attended</th>
-                  <th>Registered for start-up</th>
-                  <th>Released product</th>
-                  <th>Max Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>11. Entrepreneurship</td>
-                  <td>10</td>
-                  <td>50</td>
-                  <td>100</td>
-                  <td>100</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 12. Social Activities */}
-        <div className="activity-section">
-          <h4>12. Social Activities</h4>
-          <div className="activity-table">
-            <table>
-              <thead>
-                <tr>
-                  <th rowSpan="2">Activity</th>
-                  <th colSpan="3">Community services</th>
-                  <th colSpan="2">Participated</th>
-                  <th colSpan="2">Prizes</th>
-                  <th rowSpan="2">Max Points</th>
-                </tr>
-                <tr>
-                  <th>Activities such as Blood donation</th>
-                  <th>1 to 2 weeks (NSS/NCC Camp etc.)</th>
-                  <th>More than 2 weeks</th>
-                  <th>Inside</th>
-                  <th>Outside</th>
-                  <th>Inside</th>
-                  <th>Outside</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>12. Social Activities</td>
-                  <td>5</td>
-                  <td>30</td>
-                  <td>50</td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td>50</td>
-                </tr>
-                <tr>
-                  <td>Count</td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td><input type="number" placeholder="Count" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Student marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Mentor marks (count x marks)</td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td><input type="number" placeholder="Marks" /></td>
-                  <td></td>
-                </tr>
-                <tr>
-                  <td>Proof page number</td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td><input type="number" placeholder="Page" /></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <div className="submit-section">
-          <button type="button" className="submit-btn" onClick={handleSubmitFullForm}>Submit SAP Form</button>
-        </div>
-
-        {/* Mentor Signature */}
-        <div className="signature-section">
-          <div className="signature-line">
-            <span>Mentor Signature:</span>
-            <div className="signature-box"></div>
-          </div>
+        <div style={{ marginTop: '40px', padding: '20px', backgroundColor: '#e8f4f8', borderRadius: '8px', border: '1px solid #b3d9e8' }}>
+          <h3>📌 Quick Links</h3>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            <li style={{ marginBottom: '10px' }}>
+              <Link to="/events-form" style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}>
+                ➜ Submit Individual Events
+              </Link>
+            </li>
+            <li>
+              <Link to="/marks-view" style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}>
+                ➜ View My Marks & Feedback
+              </Link>
+            </li>
+          </ul>
         </div>
       </div>
     </div>

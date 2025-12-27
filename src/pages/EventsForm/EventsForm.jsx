@@ -15,21 +15,24 @@ const EventsForm = () => {
     mentorEmail: ''
   });
 
-  // State for each event's data and files - CHANGE STRUCTURE
+  // State for each event's data - counts, marks, and files with labels
   const [eventData, setEventData] = useState({
-    paperPresentation: { counts: {}, studentMarks: {}, files: {} }, // files is now an object
-    projectPresentation: { counts: {}, studentMarks: {}, files: {} },
-    technoManagerial: { counts: {}, studentMarks: {}, files: {} },
-    sportsGames: { counts: {}, studentMarks: {}, files: {} },
-    membership: { counts: {}, studentMarks: {}, files: {} },
-    leadership: { counts: {}, studentMarks: {}, files: {} },
-    vacOnline: { counts: {}, studentMarks: {}, files: {} },
-    projectPaper: { counts: {}, studentMarks: {}, files: {} },
-    gateExams: { counts: {}, studentMarks: {}, files: {} },
-    internship: { counts: {}, studentMarks: {}, files: {} },
-    entrepreneurship: { counts: {}, studentMarks: {}, files: {} },
-    miscellaneous: { counts: {}, studentMarks: {}, files: {} }
+    paperPresentation: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    projectPresentation: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    technoManagerial: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    sportsGames: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    membership: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    leadership: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    vacOnline: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    projectPaper: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    gateExams: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    internship: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    entrepreneurship: { counts: {}, studentMarks: {}, uploadedFiles: [] },
+    miscellaneous: { counts: {}, studentMarks: {}, uploadedFiles: [] }
   });
+
+  // Temporary state for file input and name in each event section
+  const [fileInputState, setFileInputState] = useState({});
 
   const [submissionStatus, setSubmissionStatus] = useState({});
 
@@ -53,114 +56,178 @@ const EventsForm = () => {
     }));
   };
 
-  const handleFileUpload = (eventKey, categoryKey, files) => { // ✅ Add categoryKey parameter
-    setEventData(prev => {
-      const existingFiles = prev[eventKey].files[categoryKey] || [];
-      const newFiles = Array.from(files);
-      // ✅ Append new files to existing files (avoid duplicates by checking name and size)
-      const combinedFiles = [...existingFiles];
-      newFiles.forEach(newFile => {
-        const isDuplicate = existingFiles.some(
-          existing => existing.name === newFile.name && existing.size === newFile.size
-        );
-        if (!isDuplicate) {
-          combinedFiles.push(newFile);
-        }
-      });
-      return {
+  const handleAddFile = (eventKey, file, fileName) => {
+    if (!file || !fileName.trim()) {
+      alert('❌ Please select a file and enter a name/label');
+      return;
+    }
+
+    setEventData(prev => ({
+      ...prev,
+      [eventKey]: {
+        ...prev[eventKey],
+        uploadedFiles: [
+          ...prev[eventKey].uploadedFiles,
+          { file, name: fileName, id: Date.now() }
+        ]
+      }
+    }));
+
+    // Clear the input
+    setFileInputState(prev => ({
+      ...prev,
+      [eventKey]: { file: null, name: '' }
+    }));
+
+    // Reset file input
+    const fileInput = document.getElementById(`file-input-${eventKey}`);
+    if (fileInput) fileInput.value = '';
+  };
+
+  const handleRemoveFile = (eventKey, fileId) => {
+    setEventData(prev => ({
+      ...prev,
+      [eventKey]: {
+        ...prev[eventKey],
+        uploadedFiles: prev[eventKey].uploadedFiles.filter(f => f.id !== fileId)
+      }
+    }));
+  };
+
+  const handleFileNameChange = (eventKey, name) => {
+    setFileInputState(prev => ({
+      ...prev,
+      [eventKey]: { ...prev[eventKey], name }
+    }));
+  };
+
+  const handleFileSelect = (eventKey, files) => {
+    if (files.length > 0) {
+      setFileInputState(prev => ({
         ...prev,
-        [eventKey]: {
-          ...prev[eventKey],
-          files: {
-            ...prev[eventKey].files,
-            [categoryKey]: combinedFiles // ✅ Append files instead of replacing
-          }
-        }
-      };
-    });
+        [eventKey]: { ...prev[eventKey], file: files[0] }
+      }));
+    }
   };
 
-  const removeFile = (eventKey, categoryKey, fileIndex) => {
-    setEventData(prev => ({
-      ...prev,
-      [eventKey]: {
-        ...prev[eventKey],
-        files: {
-          ...prev[eventKey].files,
-          [categoryKey]: prev[eventKey].files[categoryKey].filter((_, idx) => idx !== fileIndex)
-        }
-      }
-    }));
-  };
-
-  const clearCategoryFiles = (eventKey, categoryKey) => {
-    setEventData(prev => ({
-      ...prev,
-      [eventKey]: {
-        ...prev[eventKey],
-        files: {
-          ...prev[eventKey].files,
-          [categoryKey]: []
-        }
-      }
-    }));
+  const checkBackend = async () => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch('http://localhost:8080/api/sap/health', { signal: controller.signal });
+      clearTimeout(timeout);
+      return res.ok;
+    } catch (e) {
+      return false;
+    }
   };
 
   const submitEventData = async (eventKey, eventTitle) => {
+    // Preflight backend health check
+    const up = await checkBackend();
+    if (!up) {
+      alert('❌ Backend is not reachable at http://localhost:8080 — please start the server or check network.');
+      return;
+    }
+
     if (!formData.mentorEmail) {
-      alert('Please enter mentor email first');
+      alert('❌ Please enter mentor email first');
       return;
     }
 
     const event = eventData[eventKey];
-    
-    // ✅ Check if at least one category has files
-    const hasFiles = Object.values(event.files || {}).some(fileArray => fileArray && fileArray.length > 0);
-    if (!hasFiles) {
-      alert(`Please upload at least one file for ${eventTitle}`);
-      return;
-    }
 
+    // Create FormData
     const fd = new FormData();
+    
+    // Add student info
     fd.append('studentInfo', JSON.stringify(formData));
     fd.append('eventKey', eventKey);
     fd.append('eventTitle', eventTitle);
+    fd.append('mentorEmail', formData.mentorEmail);
+    fd.append('email', formData.studentEmail);
+    
+    // Add event data (counts and marks)
     fd.append('eventData', JSON.stringify({
       counts: event.counts,
       studentMarks: event.studentMarks
     }));
-    fd.append('mentorEmail', formData.mentorEmail);
-    fd.append('email', formData.studentEmail);
 
-    // ✅ Append files for each category
-    Object.entries(event.files || {}).forEach(([categoryKey, files]) => {
-      if (files && files.length > 0) {
-        files.forEach((file, idx) => {
-          fd.append(`proofs[${eventKey}][${categoryKey}]`, file); // ✅ Include category in file naming
-        });
-      }
-    });
+    // Add file uploads if any
+    if (event.uploadedFiles && event.uploadedFiles.length > 0) {
+      event.uploadedFiles.forEach((fileObj) => {
+        fd.append(`files`, fileObj.file);
+        fd.append(`fileNames`, fileObj.name);
+      });
+      console.log(`📸 Attached ${event.uploadedFiles.length} file(s)`);
+    }
+
+    console.log(`📤 Submitting ${eventTitle}`);
+    console.log('FormData entries:');
+    for (let [key, value] of fd.entries()) {
+      console.log(`  ${key}:`, typeof value === 'string' ? value.substring(0, 100) : `[${value}]`);
+    }
 
     try {
       setSubmissionStatus(prev => ({ ...prev, [eventKey]: 'submitting' }));
       
-      const res = await fetch('http://localhost:8080/api/sap/submit-individual-event', {
-        method: 'POST',
-        body: fd
-      });
+      console.log('🚀 Sending fetch request to http://localhost:8080/api/sap/submit-individual-event');
       
-      const data = await res.json();
-      if (res.ok) {
-        setSubmissionStatus(prev => ({ ...prev, [eventKey]: 'success' }));
-        alert(`${eventTitle} submitted successfully!`);
-      } else {
-        setSubmissionStatus(prev => ({ ...prev, [eventKey]: 'error' }));
-        alert(data.error || 'Submission failed');
+      // Try with one retry for transient network errors
+      let attempt = 0;
+      let lastError = null;
+      while (attempt < 2) {
+        attempt++;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+          
+          const res = await fetch('http://localhost:8080/api/sap/submit-individual-event', {
+            method: 'POST',
+            body: fd,
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          console.log('✅ Response received. Status:', res.status);
+          
+          const data = await res.json();
+          console.log('Response data:', data);
+          
+          if (res.ok) {
+            setSubmissionStatus(prev => ({ ...prev, [eventKey]: 'success' }));
+            alert(`✅ ${eventTitle} submitted successfully!`);
+            return; // success, exit
+          } else {
+            setSubmissionStatus(prev => ({ ...prev, [eventKey]: 'error' }));
+            alert(`❌ Submission failed: ${data.error || 'Unknown error'}`);
+            return;
+          }
+        } catch (err) {
+          lastError = err;
+          console.warn(`Attempt ${attempt} failed:`, err.name || err);
+          if (attempt < 2) {
+            console.log('Retrying in 1s...');
+            await new Promise(r => setTimeout(r, 1000));
+          }
+        }
       }
+      // if we exit loop, we had errors
+      throw lastError;
     } catch (e) {
-      console.error(e);
+      console.error('❌ Submission error:', e);
+      console.error('Error type:', e.name);
+      console.error('Error message:', e.message);
+      
+      if (e.name === 'AbortError') {
+        alert('❌ Request timeout. Backend may be slow or unreachable.');
+      } else if (e instanceof TypeError) {
+        alert('❌ Network error: Could not reach server at http://localhost:8080\nMake sure backend is running!');
+      } else {
+        alert('❌ Network error while submitting. Please check your connection and backend server.');
+      }
+      
       setSubmissionStatus(prev => ({ ...prev, [eventKey]: 'error' }));
-      alert('Network error while submitting');
     }
   };
 
@@ -222,6 +289,9 @@ const EventsForm = () => {
                   {columns.map((col, idx) => (
                     <td key={idx}>
                       <input
+                        id={`count-${eventKey}-${col.key}`}
+                        name={`counts[${col.key}]`}
+                        aria-label={`Count for ${col.label}`}
                         type="number"
                         placeholder="Count"
                         min="0"
@@ -237,6 +307,9 @@ const EventsForm = () => {
                   {columns.map((col, idx) => (
                     <td key={idx}>
                       <input
+                        id={`marks-${eventKey}-${col.key}`}
+                        name={`studentMarks[${col.key}]`}
+                        aria-label={`Marks for ${col.label}`}
                         type="number"
                         placeholder="Marks"
                         min="0"
@@ -247,144 +320,119 @@ const EventsForm = () => {
                   ))}
                   <td></td>
                 </tr>
-                {/* ✅ NEW ROW: File Upload per Category - Multiple files allowed */}
-                <tr>
-                  <td style={{ verticalAlign: 'top' }}>
-                    Upload Proofs<br/>
-                    <span style={{ fontSize: '9px', color: '#007bff', fontWeight: 'bold' }}>
-                      📎 Select multiple files<br/>
-                      (Hold Ctrl/Cmd to select multiple)
-                    </span>
-                  </td>
-                  {columns.map((col, idx) => {
-                    const categoryFiles = event.files[col.key] || [];
-                    const fileInputId = `file-input-${eventKey}-${col.key}-${idx}`;
-                    return (
-                      <td key={idx} style={{ verticalAlign: 'top', padding: '8px' }}>
-                        <div style={{ border: '1px dashed #ccc', padding: '8px', borderRadius: '4px', backgroundColor: categoryFiles.length > 0 ? '#f0f8ff' : '#fafafa' }}>
-                          <label htmlFor={fileInputId} style={{ cursor: 'pointer', display: 'block' }}>
-                            <input
-                              id={fileInputId}
-                              type="file"
-                              multiple
-                              accept=".png,.jpg,.jpeg,.pdf,.doc,.docx"
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files.length > 0) {
-                                  handleFileUpload(eventKey, col.key, e.target.files);
-                                  // Reset input to allow selecting same files again
-                                  e.target.value = '';
-                                }
-                              }}
-                              style={{ 
-                                fontSize: '10px', 
-                                width: '100%', 
-                                marginBottom: '5px',
-                                cursor: 'pointer',
-                                padding: '4px'
-                              }}
-                            />
-                          </label>
-                          {categoryFiles.length === 0 ? (
-                            <div style={{ fontSize: '9px', color: '#666', textAlign: 'center', fontStyle: 'italic' }}>
-                              Click to select files<br/>
-                              (You can select multiple)
-                            </div>
-                          ) : (
-                            <>
-                              <div style={{ fontSize: '10px', color: '#28a745', marginTop: '4px', fontWeight: 'bold', marginBottom: '5px', textAlign: 'center' }}>
-                                ✓ {categoryFiles.length} file{categoryFiles.length !== 1 ? 's' : ''} uploaded
-                              </div>
-                              <div style={{ fontSize: '9px', color: '#007bff', marginBottom: '5px', textAlign: 'center', fontStyle: 'italic' }}>
-                                Click above to add more files
-                              </div>
-                              <div style={{ marginTop: '5px' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => clearCategoryFiles(eventKey, col.key)}
-                                  style={{
-                                    fontSize: '9px',
-                                    padding: '3px 8px',
-                                    background: '#dc3545',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '3px',
-                                    cursor: 'pointer',
-                                    marginBottom: '5px',
-                                    width: '100%'
-                                  }}
-                                >
-                                  🗑️ Clear All ({categoryFiles.length})
-                                </button>
-                                <div style={{ maxHeight: '100px', overflowY: 'auto', marginTop: '5px', border: '1px solid #ddd', borderRadius: '3px', padding: '5px', backgroundColor: 'white' }}>
-                                  {categoryFiles.map((file, fileIdx) => (
-                                    <div key={fileIdx} style={{ 
-                                      fontSize: '9px', 
-                                      marginBottom: '4px', 
-                                      display: 'flex', 
-                                      alignItems: 'center', 
-                                      gap: '5px',
-                                      padding: '3px',
-                                      backgroundColor: '#f9f9f9',
-                                      borderRadius: '2px'
-                                    }}>
-                                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={file.name}>
-                                        📄 {file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => removeFile(eventKey, col.key, fileIdx)}
-                                        style={{
-                                          fontSize: '10px',
-                                          padding: '2px 6px',
-                                          background: '#ffc107',
-                                          color: '#000',
-                                          border: 'none',
-                                          borderRadius: '3px',
-                                          cursor: 'pointer',
-                                          fontWeight: 'bold'
-                                        }}
-                                        title={`Remove ${file.name}`}
-                                      >
-                                        ×
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    );
-                  })}
-                  <td></td>
-                </tr>
               </tbody>
             </table>
           </div>
-          
-          {/* ✅ Show all uploaded files summary */}
-          <div className="file-upload-section" style={{ marginTop: '15px' }}>
-            <div className="upload-area">
-              <label className="upload-label">📎 Uploaded Files Summary for {title}</label>
-              <div className="file-list">
-                {columns.map((col) => {
-                  const files = event.files[col.key] || [];
-                  if (files.length === 0) return null;
-                  return (
-                    <div key={col.key} style={{ marginBottom: '10px' }}>
-                      <strong>{col.label}:</strong> {files.length} file(s)
-                      <ul style={{ marginLeft: '20px', fontSize: '12px' }}>
-                        {files.map((file, idx) => (
-                          <li key={idx}>{file.name}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+
+          {/* File Upload Section */}
+          <div style={{ marginTop: '15px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '5px' }}>
+            <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>
+              📸 Upload Supporting Documents/Images:
+            </label>
             
+            {/* File Input and Name Input */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                <label htmlFor={`file-input-${eventKey}`} style={{ display: 'block', fontSize: '12px', marginBottom: '5px' }}>
+                  Select File:
+                </label>
+                <input
+                  id={`file-input-${eventKey}`}
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => handleFileSelect(eventKey, e.target.files)}
+                  style={{ width: '100%', padding: '8px' }}
+                />
+                {fileInputState[eventKey]?.file && (
+                  <small style={{ color: '#666' }}>
+                    ✓ {fileInputState[eventKey].file.name}
+                  </small>
+                )}
+              </div>
+              
+              <div style={{ flex: 1 }}>
+                <label htmlFor={`file-name-${eventKey}`} style={{ display: 'block', fontSize: '12px', marginBottom: '5px' }}>
+                  Name/Label (e.g., "Inside", "Outside"):
+                </label>
+                <input
+                  id={`file-name-${eventKey}`}
+                  type="text"
+                  placeholder="e.g., Inside Presented, Outside Prize"
+                  value={fileInputState[eventKey]?.name || ''}
+                  onChange={(e) => handleFileNameChange(eventKey, e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => handleAddFile(eventKey, fileInputState[eventKey]?.file, fileInputState[eventKey]?.name || '')}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                ➕ Add File
+              </button>
+            </div>
+
+            {/* Uploaded Files List */}
+            {event.uploadedFiles && event.uploadedFiles.length > 0 && (
+              <div style={{ marginTop: '15px', backgroundColor: 'white', padding: '10px', borderRadius: '4px' }}>
+                <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>
+                  ✅ {event.uploadedFiles.length} file(s) uploaded:
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {event.uploadedFiles.map((fileObj) => (
+                    <div
+                      key={fileObj.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '10px',
+                        backgroundColor: '#e8f4f8',
+                        borderRadius: '4px',
+                        border: '1px solid #b3e5fc'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#01579b' }}>
+                          📄 {fileObj.name}
+                        </div>
+                        <small style={{ color: '#666' }}>
+                          {fileObj.file.name} ({(fileObj.file.size / 1024).toFixed(2)} KB)
+                        </small>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(eventKey, fileObj.id)}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#f44336',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        ✕ Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Submit Button */}
+          <div style={{ marginTop: '15px', textAlign: 'center' }}>
             <button
               type="button"
               className={`submit-event-btn ${status === 'success' ? 'success' : ''}`}
@@ -587,8 +635,11 @@ const EventsForm = () => {
           <h4>Student Information</h4>
           <div className="info-grid">
             <div className="info-item">
-              <label>Student Name:</label>
+              <label htmlFor="studentName">Student Name:</label>
               <input 
+                id="studentName"
+                name="studentName"
+                aria-label="Student Name"
                 type="text" 
                 value={formData.studentName}
                 onChange={(e) => handleBasicInfoChange('studentName', e.target.value)}
@@ -596,8 +647,11 @@ const EventsForm = () => {
               />
             </div>
             <div className="info-item">
-              <label>Roll Number:</label>
+              <label htmlFor="rollNumber">Roll Number:</label>
               <input 
+                id="rollNumber"
+                name="rollNumber"
+                aria-label="Roll Number"
                 type="text" 
                 value={formData.rollNumber}
                 onChange={(e) => handleBasicInfoChange('rollNumber', e.target.value)}
@@ -605,26 +659,37 @@ const EventsForm = () => {
               />
             </div>
             <div className="info-item">
-              <label>Student Email:</label>
+              <label htmlFor="studentEmail">Student Email:</label>
               <input
+                id="studentEmail"
+                name="studentEmail"
+                aria-label="Student Email"
                 type="email"
                 value={formData.studentEmail}
                 onChange={(e) => handleBasicInfoChange('studentEmail', e.target.value)}
                 placeholder="your.email@example.com"
+                autoComplete="email"
               />
             </div>
             <div className="info-item">
-              <label>Mentor Email:</label>
+              <label htmlFor="mentorEmail">Mentor Email:</label>
               <input
+                id="mentorEmail"
+                name="mentorEmail"
+                aria-label="Mentor Email"
                 type="email"
                 value={formData.mentorEmail}
                 onChange={(e) => handleBasicInfoChange('mentorEmail', e.target.value)}
                 placeholder="mentor.email@example.com"
+                autoComplete="email"
               />
             </div>
             <div className="info-item">
-              <label>Year:</label>
+              <label htmlFor="year">Year:</label>
               <input 
+                id="year"
+                name="year"
+                aria-label="Year"
                 type="text" 
                 value={formData.year}
                 onChange={(e) => handleBasicInfoChange('year', e.target.value)}
@@ -632,8 +697,11 @@ const EventsForm = () => {
               />
             </div>
             <div className="info-item">
-              <label>Section:</label>
+              <label htmlFor="section">Section:</label>
               <input 
+                id="section"
+                name="section"
+                aria-label="Section"
                 type="text" 
                 value={formData.section}
                 onChange={(e) => handleBasicInfoChange('section', e.target.value)}

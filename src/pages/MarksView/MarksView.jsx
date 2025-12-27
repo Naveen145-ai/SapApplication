@@ -7,6 +7,26 @@ const MarksView = () => {
   const [error, setError] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
 
+  // Marks reference table: convert raw mentor marks to SAP points
+  const marksReference = [
+    { range: '0-20', points: 0 },
+    { range: '21-49', points: 2 },
+    { range: '50-79', points: 3 },
+    { range: '80-100', points: 4 },
+    { range: '101-150', points: 5 }
+  ];
+
+  // Convert raw mentor marks to SAP points based on reference table
+  const convertMarksToPoints = (rawMark) => {
+    const mark = Number(rawMark) || 0;
+    if (mark >= 0 && mark <= 20) return 0;
+    if (mark >= 21 && mark <= 49) return 2;
+    if (mark >= 50 && mark <= 79) return 3;
+    if (mark >= 80 && mark <= 100) return 4;
+    if (mark >= 101 && mark <= 150) return 5;
+    return 0;
+  };
+
   useEffect(() => {
     // Get student email from localStorage or context
     const email = localStorage.getItem('userEmail') || '';
@@ -84,6 +104,32 @@ const MarksView = () => {
         </div>
       </div>
 
+      {/* Marks Reference Table */}
+      <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f0f8ff', borderRadius: '8px', border: '1px solid #b3d9e8' }}>
+        <h3>📋 Marks Reference Table</h3>
+        <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
+          Your mentor's evaluation marks are converted to SAP points using this reference:
+        </p>
+        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#007bff', color: 'white' }}>
+              <th style={{ padding: '10px', textAlign: 'left', border: '1px solid #ddd' }}>Marks Range</th>
+              <th style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>SAP Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            {marksReference.map((ref, idx) => (
+              <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#f9f9f9' : 'white' }}>
+                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{ref.range}</td>
+                <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd', fontWeight: 'bold', color: '#28a745' }}>
+                  {ref.points}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {marksData.length === 0 ? (
         <div className="no-marks">
           <div className="no-marks-icon">📝</div>
@@ -134,25 +180,28 @@ const MarksView = () => {
 
                       {event.status === 'reviewed' && event.mentorMarks ? (
                         <div className="mentor-feedback">
-                          <h6>Mentor Evaluation:</h6>
+                          <h6>Mentor Evaluation & SAP Points:</h6>
                           <div className="marks-breakdown">
-                            {Object.entries(event.mentorMarks).map(([key, mark]) => (
-                              <div key={key} className="mark-item">
-                                <span>{key}:</span>
-                                <span className="mark-value">
-                                  {typeof mark === 'object' ? JSON.stringify(mark) : String(mark)} pts
-                                </span>
-                              </div>
-                            ))}
+                            {Object.entries(event.mentorMarks).map(([key, mark]) => {
+                              const rawMark = typeof mark === 'object' ? 0 : Number(mark);
+                              const sapPoints = convertMarksToPoints(rawMark);
+                              return (
+                                <div key={key} className="mark-item" style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
+                                  <div style={{ fontSize: '12px', color: '#666' }}>
+                                    <strong>{key}:</strong> {rawMark} marks → <span style={{ color: '#28a745', fontWeight: 'bold' }}>{sapPoints} pts</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                          <div className="total-event-marks">
-                            Total: {Object.values(event.mentorMarks).reduce((sum, mark) => {
-                              const numMark = typeof mark === 'object' ? 0 : Number(mark);
-                              return sum + (numMark || 0);
+                          <div className="total-event-marks" style={{ marginTop: '10px', padding: '10px', backgroundColor: '#d4edda', borderRadius: '4px' }}>
+                            <strong>Total SAP Points:</strong> {Object.values(event.mentorMarks).reduce((sum, mark) => {
+                              const rawMark = typeof mark === 'object' ? 0 : Number(mark);
+                              return sum + convertMarksToPoints(rawMark);
                             }, 0)} points
                           </div>
                           {event.mentorNote && (
-                            <div className="mentor-note">
+                            <div className="mentor-note" style={{ marginTop: '10px' }}>
                               <strong>Mentor Note:</strong>
                               <p>{event.mentorNote}</p>
                             </div>
